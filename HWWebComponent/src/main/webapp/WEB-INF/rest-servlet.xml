@@ -1,0 +1,89 @@
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+
+	xsi:schemaLocation=" 
+ http://www.springframework.org/schema/beans 
+ http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
+ http://www.springframework.org/schema/context 
+ http://www.springframework.org/schema/context/spring-context-3.0.xsd
+ http://www.springframework.org/schema/mvc 
+ http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+ http://www.springframework.org/schema/data/mongo
+ http://www.springframework.org/schema/data/mongo/spring-mongo-1.0.xsd">
+
+	<context:component-scan base-package="com.freevice.hw.web.controller" />
+	<mvc:annotation-driven />
+	<context:component-scan base-package="com.freevice.hw.web.mongo.repositories" />
+
+
+	<!-- Configure to plugin JSON as request and response in method handler -->
+	<bean
+		class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+		<property name="messageConverters">
+			<list>
+				<ref bean="jsonMessageConverter" />
+				<!-- <ref bean="xmlMessageConverter" /> -->
+			</list>
+		</property>
+	</bean>
+
+	<!-- Configure bean to convert JSON to POJO and vice versa -->
+	<bean id="jsonMessageConverter"
+		class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+	</bean>
+
+<!-- 	<bean id="xmlMessageConverter"
+		class="org.springframework.http.converter.xml.Jaxb2RootElementHttpMessageConverter">
+	</bean> -->
+
+
+
+	<bean
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix">
+			<value>/WEB-INF/pages/</value>
+		</property>
+		<property name="suffix">
+			<value>.jsp</value>
+		</property>
+	</bean>
+
+	<bean id="userServiceImpl" class="com.freevice.hw.web.service.impl.UserServiceImpl">
+		<property name="userDao" ref="userDao"></property>
+	</bean>
+	<bean id="authenticationService" class="com.freevice.hw.web.service.AuthenticationService">
+		<property name="userDao" ref="userDao"></property>
+	</bean>
+	<bean id="userDao" class="com.freevice.hw.web.mongo.dao.UserDao">
+		<property name="mongoTemplate" ref="mongoTemplate"></property>
+	</bean>
+	<!-- MongoTemplate for connecting and quering the documents in the database -->
+	<bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">
+		<constructor-arg name="mongo" ref="mongo" />
+		<constructor-arg name="databaseName" value="freevice" />
+	</bean>
+	<bean id="mongo" class="org.springframework.data.mongodb.core.MongoFactoryBean">
+		<property name="host" value="localhost" />
+
+	</bean>
+	
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/rest/user/*" />
+			<bean class="com.freevice.hw.web.interceptor.RestAuthenticationInterceptor">
+				<property name="authenticationService" ref="authenticationService"></property>
+			</bean>
+		</mvc:interceptor>
+	</mvc:interceptors>
+
+	<!-- <mongo:mongo host="localhost" port="27017"> <mongo:options connections-per-host="8" 
+		threads-allowed-to-block-for-connection-multiplier="4" connect-timeout="1000" 
+		max-wait-time="1500}" auto-connect-retry="true" socket-keep-alive="true" 
+		socket-timeout="1500" slave-ok="true" write-number="1" write-timeout="0" 
+		write-fsync="true"/> </mongo:mongo> -->
+
+
+</beans>
